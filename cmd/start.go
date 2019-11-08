@@ -23,9 +23,11 @@ var startCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(0),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("serving directory: ", folder)
 		fmt.Println("listening on port: ", port)
 		fileHandler := http.FileServer(http.Dir(folder))
-		http.ListenAndServe(fmt.Sprint(":", port), fileHandler)
+		err := http.ListenAndServe(fmt.Sprint(":", port), fileHandler)
+		if err != nil {
+			panic(err)
+		}
 	},
 }
