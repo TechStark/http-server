@@ -6,7 +6,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "http-server",
-	Short: "A simple command-line HTTP server",
+	Short: "A simple command-line HTTP server for static files",
 }
 
 // Execute is the command line entry
