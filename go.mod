@@ -1,6 +1,6 @@
 module github.com/techstark/http-server
 
-go 1.13
+go 1.15
 
 require (
 	github.com/mdp/qrterminal/v3 v3.0.0
