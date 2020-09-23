@@ -3,20 +3,23 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
+	"github.com/mdp/qrterminal/v3"
 	"github.com/spf13/cobra"
 )
 
 var folder string
 var filePath string
-
 var port int
+var showQrCode bool
 
 func init() {
 	rootCmd.AddCommand(startCmd)
 	startCmd.Flags().StringVarP(&folder, "directory", "d", "", "Path of the web folder")
 	startCmd.Flags().StringVarP(&filePath, "file", "f", "", "Path of a file (for hosting a single file)")
+	startCmd.Flags().BoolVar(&showQrCode, "qrcode", false, "Show QR code of server URL")
 	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port number")
 }
 
@@ -39,13 +42,13 @@ var startCmd = &cobra.Command{
 		}
 
 		fmt.Println("Http server is running at: ")
-		if len(ips) == 0 {
-			url := "http://localhost:" + strconv.Itoa(port)
-			fmt.Println(url)
-		}
+		fmt.Println("http://localhost:" + strconv.Itoa(port))
 		for _, ip := range ips {
 			url := "http://" + ip + ":" + strconv.Itoa(port)
 			fmt.Println(url)
+			if showQrCode {
+				qrterminal.Generate(url, qrterminal.L, os.Stdout)
+			}
 		}
 
 		err = http.ListenAndServe(fmt.Sprint(":", port), fileHandler)
