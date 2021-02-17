@@ -86,7 +86,7 @@ func uploadPage(w http.ResponseWriter, r *http.Request) {
 	</head>
 	<body>
 	<form enctype="multipart/form-data" action="/api/upload" method="post">
-		<input type="file" name="file01" />
+		<input type="file" multiple="multiple" name="files" />
 		<input type="submit" value="upload" />
 	</form>
 	</body>
@@ -99,56 +99,59 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	// 1. parse input
 	r.ParseMultipartForm(10 << 20) // 10 MB
 
-	// 2. retrieve file
-	file, header, err := r.FormFile("file01")
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(400)
-		w.Write([]byte("Error retrieving the file"))
-		return
-	}
-	defer file.Close()
-
-	fileName := header.Filename
-	fileSize := header.Size
-	fmt.Println("=======================================")
-	fmt.Printf("Uploading file: %+v\n", fileName)
-	fmt.Printf("File : %.2f MB\n", float64(fileSize)/(1<<20))
-	fmt.Printf("MIME type: %+v\n", header.Header["Content-Type"])
-
-	// 3. write temporary file on our server
-	tempFile, err := ioutil.TempFile("", "http-upload-*")
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(500)
-		w.Write([]byte("Error creating temp file"))
-		return
-	}
-	// fmt.Printf("Temp file %+v\n", tempFile.Name())
-	defer tempFile.Close()
-
-	if _, err := io.CopyN(tempFile, file, fileSize); err != nil {
-		fmt.Println(err)
-		w.WriteHeader(500)
-		w.Write([]byte("Error saving the file"))
-		return
-	}
-
-	// 4. move file
-	newFileName := fileName
-	extension := filepath.Ext(fileName)
-	fileNameNoExt := fileName[0 : len(fileName)-len(extension)]
-	i := 2
-	for {
-		if _, err := os.Stat(filepath.Join(folder, newFileName)); err == nil {
-			// file exists
-			newFileName = fmt.Sprintf("%s-%d%s", fileNameNoExt, i, extension)
-			i++
-		} else {
-			break
+	fhs := r.MultipartForm.File["files"]
+	for _, fh := range fhs {
+		// 2. retrieve file
+		file, err := fh.Open()
+		if err != nil {
+			fmt.Println(err)
+			w.WriteHeader(400)
+			w.Write([]byte("Error retrieving the file"))
+			return
 		}
+		defer file.Close()
+
+		fileName := fh.Filename
+		fileSize := fh.Size
+		fmt.Println("=======================================")
+		fmt.Printf("Uploading file: %+v\n", fileName)
+		fmt.Printf("File : %.2f MB\n", float64(fileSize)/(1<<20))
+		fmt.Printf("MIME type: %+v\n", fh.Header["Content-Type"])
+
+		// 3. write temporary file on our server
+		tempFile, err := ioutil.TempFile("", "http-upload-*")
+		if err != nil {
+			fmt.Println(err)
+			w.WriteHeader(500)
+			w.Write([]byte("Error creating temp file"))
+			return
+		}
+		// fmt.Printf("Temp file %+v\n", tempFile.Name())
+		defer tempFile.Close()
+
+		if _, err := io.CopyN(tempFile, file, fileSize); err != nil {
+			fmt.Println(err)
+			w.WriteHeader(500)
+			w.Write([]byte("Error saving the file"))
+			return
+		}
+
+		// 4. move file
+		newFileName := fileName
+		extension := filepath.Ext(fileName)
+		fileNameNoExt := fileName[0 : len(fileName)-len(extension)]
+		i := 2
+		for {
+			if _, err := os.Stat(filepath.Join(folder, newFileName)); err == nil {
+				// file exists
+				newFileName = fmt.Sprintf("%s-%d%s", fileNameNoExt, i, extension)
+				i++
+			} else {
+				break
+			}
+		}
+		os.Rename(tempFile.Name(), filepath.Join(folder, newFileName))
 	}
-	os.Rename(tempFile.Name(), filepath.Join(folder, newFileName))
 
 	// done
 	fmt.Printf("Successfully Uploaded File\n\n\n")
