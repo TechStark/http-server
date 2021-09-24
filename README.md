@@ -4,7 +4,7 @@ A simple command-line HTTP server
 ## Usage:
 ```sh
 cd path/to/web-folder/
-http-server start
+http-server start test
 ```
 
 ## Help Doc:
