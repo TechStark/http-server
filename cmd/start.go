@@ -70,7 +70,7 @@ var startCmd = &cobra.Command{
 			}
 		}
 
-		err = http.ListenAndServe(fmt.Sprint(":", port), nil)
+		err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 		fmt.Println("bye~")
 		if err != nil {
 			panic(err)
