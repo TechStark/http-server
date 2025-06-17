@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	_ "embed"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,6 +12,9 @@ import (
 	"github.com/mdp/qrterminal/v3"
 	"github.com/spf13/cobra"
 )
+
+//go:embed static/upload.html
+var uploadHTML string
 
 var folder string
 var filePath string
@@ -76,23 +79,7 @@ var startCmd = &cobra.Command{
 }
 
 func uploadPage(w http.ResponseWriter, r *http.Request) {
-	htmlContent := `<!DOCTYPE html>
-<html lang="en">
-	<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-	<title>Upload Files</title>
-	</head>
-	<body>
-	<form enctype="multipart/form-data" action="/api/upload" method="post">
-		<input type="file" multiple="multiple" name="files" />
-		<input type="submit" value="upload" />
-	</form>
-	</body>
-</html>
-`
-	w.Write([]byte(htmlContent))
+	w.Write([]byte(uploadHTML))
 }
 
 func uploadFile(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +92,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		file, err := fh.Open()
 		if err != nil {
 			fmt.Println(err)
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Error retrieving the file"))
 			return
 		}
@@ -119,10 +106,10 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("MIME type: %+v\n", fh.Header["Content-Type"])
 
 		// 3. write temporary file on our server
-		tempFile, err := ioutil.TempFile("", "http-upload-*")
+		tempFile, err := os.CreateTemp("", "http-upload-*")
 		if err != nil {
 			fmt.Println(err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error creating temp file"))
 			return
 		}
@@ -131,7 +118,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 		if _, err := io.CopyN(tempFile, file, fileSize); err != nil {
 			fmt.Println(err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error saving the file"))
 			return
 		}
@@ -155,5 +142,5 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	// done
 	fmt.Printf("Successfully Uploaded File\n\n\n")
-	http.Redirect(w, r, "/", 302)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
