@@ -8,13 +8,13 @@ jobs:
     steps:
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: 1.24
       id: go
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Build - Windows x86
       run: go build -ldflags="-s -w" -o dist/windows_x86/http-server.exe -v .
@@ -28,7 +28,7 @@ jobs:
         GOOS: windows
         GOARCH: amd64
 
-    - name: Build - macOS x64
+    - name: Build - macOS x64 (Intel)
       run: go build -ldflags="-s -w" -o dist/macos_x64/http-server -v .
       env:
         GOOS: darwin
@@ -41,7 +41,7 @@ jobs:
         GOARCH: arm64
 
     - name: Archive production artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist
         path: dist
