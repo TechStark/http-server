@@ -51,13 +51,17 @@ jobs:
         name: dist
         path: dist
 
-    - name: Upload Release Assets
+    - name: Package and Upload Release Assets
       if: github.event_name == 'release'
       run: |
+        tar -czf http-server.windows_x86.tar.gz  -C dist/windows_x86 http-server.exe
+        tar -czf http-server.windows_x64.tar.gz  -C dist/windows_x64 http-server.exe
+        tar -czf http-server.macos_intel.tar.gz  -C dist/macos_x64   http-server
+        tar -czf http-server.macos_arm64.tar.gz  -C dist/macos_arm64 http-server
         gh release upload ${{ github.event.release.tag_name }} \
-          dist/windows_x86/http-server.exe \
-          dist/windows_x64/http-server.exe \
-          dist/macos_x64/http-server \
-          dist/macos_arm64/http-server
+          http-server.windows_x86.tar.gz \
+          http-server.windows_x64.tar.gz \
+          http-server.macos_intel.tar.gz \
+          http-server.macos_arm64.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
